@@ -2,11 +2,18 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import PolariaIcon from '../components/PolariaIcon';
+import LoginForm from '../components/LoginForm';
+import LogoutForm from '../components/LogoutForm';
+import { useAuth } from '../hooks/useAuth';
 import { useChat } from '../hooks/useChat';
 
 export default function Home() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [showLoginForm, setShowLoginForm] = useState(false);
+  const [showLogoutForm, setShowLogoutForm] = useState(false);
   const chatEndRef = useRef(null);
+
+  const { user, isAuthenticated, login, logout } = useAuth();
 
   const {
     messages,
@@ -51,10 +58,10 @@ export default function Home() {
         </div>
 
         <div className="user-panel">
-          <div className="avatar">M</div>
+          <div className="avatar">{isAuthenticated ? user.name.charAt(0) : '?'}</div>
           <div>
-            <div className="user-name">Mauricio</div>
-            <div className="user-role">Administrador</div>
+            <div className="user-name">{isAuthenticated ? user.name : 'Invitado'}</div>
+            <div className="user-role">{isAuthenticated ? user.role : 'Sin sesión'}</div>
           </div>
         </div>
       </aside>
@@ -70,7 +77,15 @@ export default function Home() {
               Asistente Mateo
             </h2>
           </div>
-          <button className="login-btn">Login con Google</button>
+          {isAuthenticated ? (
+            <button className="login-btn" onClick={() => setShowLogoutForm(true)}>
+              Cerrar sesión
+            </button>
+          ) : (
+            <button className="login-btn" onClick={() => setShowLoginForm(true)}>
+              Iniciar sesión
+            </button>
+          )}
         </header>
 
         {showWelcome && (
@@ -158,6 +173,17 @@ export default function Home() {
           <button onClick={enviarMensaje}>Enviar</button>
         </footer>
       </main>
+
+      {showLoginForm && (
+        <LoginForm onLogin={login} onClose={() => setShowLoginForm(false)} />
+      )}
+      {showLogoutForm && isAuthenticated && (
+        <LogoutForm
+          user={user}
+          onLogout={logout}
+          onClose={() => setShowLogoutForm(false)}
+        />
+      )}
     </div>
   );
 }
