@@ -1,0 +1,47 @@
+# ==========================================
+# DEPENDENCIAS
+# ==========================================
+# Esta carpeta contiene miles de archivos pesados y se descarga sola con 'npm install'
+node_modules/
+/.pnpm-store
+
+# ==========================================
+# ARCHIVOS DE NEXT.JS Y COMPILACIÓN
+# ==========================================
+# Carpetas temporales y de producción que genera Next.js automáticamente
+.next/
+out/
+build/
+dist/
+
+# ==========================================
+# LOGS Y ERRORES
+# ==========================================
+# Registros internos del gestor de paquetes si algo falla
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+lerna-debug.log*
+
+# ==========================================
+# VARIABLES DE ENTORNO Y CREDENCIALES
+# ==========================================
+# NUNCA subas estos archivos a GitHub porque contienen contraseñas o tokens privados
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ==========================================
+# SISTEMA OPERATIVO
+# ==========================================
+# Archivos basura invisibles que crean Windows y Mac dentro de las carpetas
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
