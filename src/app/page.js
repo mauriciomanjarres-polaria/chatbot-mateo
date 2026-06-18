@@ -7,6 +7,8 @@ import LogoutForm from '../components/LogoutForm';
 import { useAuth } from '../hooks/useAuth';
 import { useChat } from '../hooks/useChat';
 
+import { FaWarehouse, FaBrain , FaChartBar  } from 'react-icons/fa';
+
 export default function Home() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [showLoginForm, setShowLoginForm] = useState(false);
@@ -112,28 +114,28 @@ export default function Home() {
          <div className="cards-list">
            
            <div className="card-item">
-             <div className="card-avatar card-avatar--sales">📈</div>
+             <div className="card-avatar card-avatar--sales"> <FaWarehouse size={24} /></div>
              <div className="card-content">
-               <h3>¿Cómo van las ventas de hoy?</h3>
-               <p>Inventario.</p>
+               <h3>Consulta Instantánea de Inventarios</h3>
+               <p>Información precisa y actualizada para decisiones rápidas.</p>
              </div>
            </div>
        
            <div className="card-item">
-             <div className="card-avatar card-avatar--purchases">🛒</div>
+             <div className="card-avatar card-avatar--purchases"> <FaBrain size={24} /></div>
              <div className="card-content">
-               <h3>Revisar últimas compras</h3>
-               <p>Controla los gastos recientes y las cuentas con proveedores.</p>
+               <h3>Conocimiento y Gestión del Negocio</h3>
+               <p>Insights diarios para una administración con visión de futuro.</p>
              </div>
            </div>
        
          
        
            <div className="card-item">
-             <div className="card-avatar card-avatar--reports">📊</div>
+             <div className="card-avatar card-avatar--reports"><FaChartBar size={24} /></div>
              <div className="card-content">
-               <h3>Balance general del negocio</h3>
-               <p>Analiza la relación entre compras y ventas para saber si tu negocio está siendo rentable.</p>
+               <h3>Disponibilidad Total de Informes</h3>
+               <p>Acceso inmediato a informes detallados y listos para la toma de decisiones.</p>
              </div>
            </div>
        
