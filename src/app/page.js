@@ -115,7 +115,7 @@ export default function Home() {
              <div className="card-avatar card-avatar--sales">📈</div>
              <div className="card-content">
                <h3>¿Cómo van las ventas de hoy?</h3>
-               <p>Revisa los ingresos del día y los productos más vendidos.</p>
+               <p>Inventario.</p>
              </div>
            </div>
        
