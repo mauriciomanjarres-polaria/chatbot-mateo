@@ -1,5 +1,19 @@
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL || 'https://polaria-wms-api.onrender.com';
+const DEFAULT_API_BASE = 'https://polaria-wms-api.onrender.com';
+
+function resolveApiBase() {
+  const raw = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
+  if (!raw || raw === '/') return DEFAULT_API_BASE;
+
+  try {
+    const url = new URL(raw);
+    if (!url.protocol.startsWith('http')) return DEFAULT_API_BASE;
+    return url.origin;
+  } catch {
+    return DEFAULT_API_BASE;
+  }
+}
+
+const API_BASE = resolveApiBase();
 
 async function parseJsonResponse(response) {
   const text = await response.text();
@@ -60,7 +74,7 @@ async function request(
     options.credentials = 'include';
   }
 
-  const response = await fetch(`${API_BASE}${path}`, options);
+  const response = await fetch(`${API_BASE}${path.startsWith('/') ? path : `/${path}`}`, options);
 
   const data = await parseJsonResponse(response);
 
