@@ -2,9 +2,9 @@ const CACHE_NAME = "polaria-ai-v1";
 const APP_SHELL = [
   "/",
   "/manifest.json",
-  "/icon-192.svg",
-  "/icon-512.svg",
-  "/maskable-icon.svg"
+  "/icon-192.png",
+  "/icon-512.png",
+  "/maskable-icon.png"
 ];
 
 self.addEventListener("install", (event) => {

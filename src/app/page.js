@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import PolariaIcon from '../components/PolariaIcon';
 import LogoutForm from '../components/LogoutForm';
+import PWAInstallButton from '../components/PWAInstallButton';
 import { redirectToWmsLogin } from '../lib/auth-config';
 import { useAuth } from '../hooks/useAuth';
 import { useChat } from '../hooks/useChat';
@@ -123,9 +124,12 @@ export default function Home() {
               Asistente Mateo
             </h2>
           </div>
-          <button className="login-btn" onClick={() => setShowLogoutForm(true)}>
-            Cerrar sesión
-          </button>
+          <div className="topbar-actions">
+            <PWAInstallButton compact={isMobile} />
+            <button className="login-btn" onClick={() => setShowLogoutForm(true)}>
+              Cerrar sesión
+            </button>
+          </div>
         </header>
 
         {showWelcome && (
