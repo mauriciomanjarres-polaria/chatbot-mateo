@@ -4,8 +4,10 @@ import Image from 'next/image';
 import PolariaIcon from '../components/PolariaIcon';
 import LogoutForm from '../components/LogoutForm';
 import PWAInstallButton from '../components/PWAInstallButton';
-import { redirectToWmsLogin } from '../lib/auth-config';
+import WmsLinkButton from '../components/WmsLinkButton';
+import { isDirectLoginEnabled, redirectToWmsLogin } from '../lib/auth-config';
 import { useAuth } from '../hooks/useAuth';
+import LoginForm from '../components/LoginForm';
 import { useChat } from '../hooks/useChat';
 
 import { FaWarehouse, FaBrain , FaChartBar  } from 'react-icons/fa';
@@ -16,7 +18,8 @@ export default function Home() {
   const [showLogoutForm, setShowLogoutForm] = useState(false);
   const chatEndRef = useRef(null);
 
-  const { user, isAuthenticated, isReady, logout } = useAuth();
+  const { user, isAuthenticated, isReady, logout, applySession } = useAuth();
+  const allowDirectLogin = isDirectLoginEnabled();
 
   const {
     messages,
@@ -33,10 +36,10 @@ export default function Home() {
   });
 
   useEffect(() => {
-    if (isReady && !isAuthenticated) {
+    if (isReady && !isAuthenticated && !allowDirectLogin) {
       redirectToWmsLogin();
     }
-  }, [isReady, isAuthenticated]);
+  }, [isReady, isAuthenticated, allowDirectLogin]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -66,7 +69,22 @@ export default function Home() {
     }
   };
 
-  if (!isReady || !isAuthenticated) {
+  if (!isReady) {
+    return (
+      <div className="sso-page">
+        <div className="sso-card">
+          <h1>Cargando…</h1>
+          <p>Preparando la sesión.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    if (allowDirectLogin) {
+      return <LoginForm onLoginSuccess={applySession} />;
+    }
+
     return (
       <div className="sso-page">
         <div className="sso-card">
@@ -125,6 +143,7 @@ export default function Home() {
             </h2>
           </div>
           <div className="topbar-actions">
+            <WmsLinkButton compact={isMobile} />
             <PWAInstallButton compact={isMobile} />
             <button className="login-btn" onClick={() => setShowLogoutForm(true)}>
               Cerrar sesión

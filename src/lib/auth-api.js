@@ -61,7 +61,10 @@ async function request(
   path,
   { method = 'GET', body, token, includeCredentials = false } = {},
 ) {
-  const headers = { 'Content-Type': 'application/json' };
+  const headers = {
+    'Content-Type': 'application/json',
+    'X-Auth-Client': 'mateo',
+  };
   if (token) headers.Authorization = `Bearer ${token}`;
 
   const options = {
@@ -84,6 +87,36 @@ async function request(
     data,
     error: response.ok ? null : extractErrorMessage(data, 'Error en la solicitud.'),
   };
+}
+
+export async function prelogin(username) {
+  return request('/auth/prelogin', {
+    method: 'POST',
+    body: { username },
+  });
+}
+
+export async function login({ username, password, codigoEmpresa }) {
+  const body = { username, password };
+  if (codigoEmpresa) body.codigoEmpresa = codigoEmpresa;
+
+  const result = await request('/auth/login', {
+    method: 'POST',
+    body,
+  });
+
+  if (!result.ok) return result;
+
+  try {
+    return { ...result, session: normalizeSession(result.data) };
+  } catch (error) {
+    return {
+      ok: false,
+      status: 500,
+      data: result.data,
+      error: error.message,
+    };
+  }
 }
 
 export async function exchangeMateoCode(code) {

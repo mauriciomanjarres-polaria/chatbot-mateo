@@ -77,7 +77,7 @@ body {
   filter: drop-shadow(0 0 8px var(--t20));
 }
 
-.icon-btn, .new-chat, .login-btn, .install-btn, .composer button {
+.icon-btn, .new-chat, .login-btn, .install-btn, .wms-link-btn, .composer button {
   border: none;
   border-radius: 12px;
   cursor: pointer;
@@ -199,6 +199,40 @@ body {
 
 .install-btn:hover {
   background: var(--t20);
+}
+
+.wms-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border: 1px solid var(--w20);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--w50);
+  font-weight: 500;
+  font-size: 13px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.wms-link-btn:hover {
+  color: var(--w);
+  border-color: var(--w50);
+  background: var(--w08);
+}
+
+.wms-link-btn svg {
+  color: var(--teal);
+  flex-shrink: 0;
+}
+
+.wms-link-btn--compact {
+  padding: 8px;
+}
+
+.wms-link-btn--compact span {
+  display: none;
 }
 
 .install-btn--compact {
@@ -513,12 +547,14 @@ body {
     gap: 8px;
   }
 
-  .install-btn {
+  .install-btn,
+  .wms-link-btn {
     padding: 8px 14px;
     font-size: 13px;
   }
 
-  .install-btn--compact {
+  .install-btn--compact,
+  .wms-link-btn--compact {
     padding: 8px;
   }
 
@@ -578,12 +614,14 @@ body {
     gap: 6px;
   }
 
-  .install-btn {
+  .install-btn,
+  .wms-link-btn {
     padding: 8px 10px;
     font-size: 12px;
   }
 
-  .install-btn--compact {
+  .install-btn--compact,
+  .wms-link-btn--compact {
     padding: 8px;
   }
 

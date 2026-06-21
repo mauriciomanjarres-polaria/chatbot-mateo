@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import * as authApi from '../lib/auth-api';
-import { redirectToWmsLogin } from '../lib/auth-config';
+import { isDirectLoginEnabled, redirectToWmsLogin } from '../lib/auth-config';
 import {
   getStoredSession,
   setStoredSession,
@@ -15,11 +15,11 @@ export function useAuth() {
   const [isReady, setIsReady] = useState(false);
 
   const applySession = useCallback((session) => {
-    if (!session?.user) return;
+    if (!session?.accessToken) return;
 
     setStoredSession(session);
-    setAccessToken(session.accessToken ?? null);
-    setUser(session.user);
+    setAccessToken(session.accessToken);
+    setUser(session.user ?? null);
   }, []);
 
   const clearSession = useCallback(() => {
@@ -78,14 +78,18 @@ export function useAuth() {
       }
     }
     clearSession();
-    redirectToWmsLogin();
+
+    if (!isDirectLoginEnabled()) {
+      redirectToWmsLogin();
+    }
   };
 
   return {
     user,
     accessToken,
     isReady,
-    isAuthenticated: !!user,
+    isAuthenticated: !!(user || accessToken),
+    applySession,
     logout,
   };
 }
