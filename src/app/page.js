@@ -139,7 +139,7 @@ export default function Home() {
             )}
             <h2 className="topbar-title">
               <PolariaIcon size={22} />
-              Asistente Mateo
+              Mateo IA
             </h2>
           </div>
           <div className="topbar-actions">
