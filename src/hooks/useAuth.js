@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import * as authApi from '../lib/auth-api';
-import { isDirectLoginEnabled, redirectToWmsLogin } from '../lib/auth-config';
+import { isDirectLoginEnabled, redirectToWmsLogin, buildWmsReturnUrl } from '../lib/auth-config';
 import {
   captureSessionFromLocation,
   getStoredSession,
@@ -39,8 +39,15 @@ export function useAuth() {
 
       if (stored) {
         applySession(stored);
-      } else {
-        clearSession();
+        setIsReady(true);
+        return;
+      }
+
+      clearSession();
+
+      if (!isDirectLoginEnabled()) {
+        redirectToWmsLogin();
+        return;
       }
 
       setIsReady(true);
@@ -56,8 +63,13 @@ export function useAuth() {
       const stored = getStoredSession();
       if (stored) {
         applySession(stored);
-      } else {
-        clearSession();
+        return;
+      }
+
+      clearSession();
+
+      if (!isDirectLoginEnabled()) {
+        redirectToWmsLogin();
       }
     };
 
@@ -70,6 +82,14 @@ export function useAuth() {
       window.removeEventListener('focus', syncSession);
     };
   }, [applySession, clearSession]);
+
+  const leaveForWms = useCallback(() => {
+    const url = buildWmsReturnUrl();
+    clearStoredSession();
+    setAccessToken(null);
+    setUser(null);
+    window.location.href = url;
+  }, []);
 
   const logout = async () => {
     if (user || accessToken) {
@@ -92,6 +112,7 @@ export function useAuth() {
     isReady,
     isAuthenticated: !!(user || accessToken),
     applySession,
+    leaveForWms,
     logout,
   };
 }

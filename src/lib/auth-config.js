@@ -1,4 +1,9 @@
-import { encodeSessionForUrl, getStoredSession, getWmsSessionPayload } from './auth-storage';
+import {
+  clearStoredSession,
+  encodeSessionForUrl,
+  getStoredSession,
+  getWmsSessionPayload,
+} from './auth-storage';
 
 export const WMS_LOGIN_URL =
   process.env.NEXT_PUBLIC_WMS_LOGIN_URL || 'https://polaria-wms-web.vercel.app/';
@@ -36,7 +41,9 @@ export function buildWmsReturnUrl() {
 export function redirectToWmsWithSession() {
   if (typeof window === 'undefined') return;
 
-  window.location.href = buildWmsReturnUrl();
+  const url = buildWmsReturnUrl();
+  clearStoredSession();
+  window.location.href = url;
 }
 
 export function isDirectLoginEnabled() {

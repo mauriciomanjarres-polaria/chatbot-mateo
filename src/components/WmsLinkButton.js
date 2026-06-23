@@ -1,12 +1,15 @@
 "use client";
 
 import { FaWarehouse } from "react-icons/fa";
-import { buildWmsReturnUrl, redirectToWmsWithSession } from "../lib/auth-config";
+import { buildWmsReturnUrl } from "../lib/auth-config";
+import { useAuth } from "../hooks/useAuth";
 
 export default function WmsLinkButton({ compact = false }) {
+  const { leaveForWms } = useAuth();
+
   const handleClick = (event) => {
     event.preventDefault();
-    redirectToWmsWithSession();
+    leaveForWms();
   };
 
   return (

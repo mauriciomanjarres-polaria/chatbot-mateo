@@ -141,6 +141,19 @@ function getStorageAreas() {
   return [localStorage, sessionStorage];
 }
 
+function migratePolariaAuthFromSessionStorage() {
+  if (typeof window === 'undefined') return;
+
+  const sessionRaw = sessionStorage.getItem(STORAGE_KEY);
+  if (!sessionRaw) return;
+
+  if (!localStorage.getItem(STORAGE_KEY)) {
+    localStorage.setItem(STORAGE_KEY, sessionRaw);
+  }
+
+  sessionStorage.removeItem(STORAGE_KEY);
+}
+
 function getStoredJson(storage, key) {
   const raw = storage.getItem(key);
   if (!raw) return null;
@@ -296,7 +309,9 @@ export function captureSessionFromLocation(location = window.location) {
 export function getWmsSessionPayload() {
   if (typeof window === 'undefined') return null;
 
-  const raw = sessionStorage.getItem(STORAGE_KEY);
+  migratePolariaAuthFromSessionStorage();
+
+  const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) return null;
 
   try {
@@ -311,7 +326,9 @@ export function getWmsSessionPayload() {
 
 export function getStoredSession() {
   if (typeof window !== 'undefined') {
-    const wmsSession = normalizeStoredSession(getStoredJson(sessionStorage, STORAGE_KEY));
+    migratePolariaAuthFromSessionStorage();
+
+    const wmsSession = normalizeStoredSession(getStoredJson(localStorage, STORAGE_KEY));
     if (wmsSession) return wmsSession;
   }
 
@@ -331,7 +348,10 @@ export function setStoredSession(session) {
     context: buildContextFromUser(session.user, session.context),
   });
 
-  if (payload) sessionStorage.setItem(STORAGE_KEY, payload);
+  if (payload) {
+    localStorage.setItem(STORAGE_KEY, payload);
+    sessionStorage.removeItem(STORAGE_KEY);
+  }
 }
 
 export function clearStoredSession() {
