@@ -19,19 +19,26 @@ export default function Home() {
   const [showLogoutForm, setShowLogoutForm] = useState(false);
   const chatEndRef = useRef(null);
 
-  const { user, isAuthenticated, isReady, logout, applySession } = useAuth();
+  const { user, accessToken, isAuthenticated, isReady, logout, applySession } = useAuth();
   const allowDirectLogin = isDirectLoginEnabled();
 
   const {
     messages,
-    history,
+    conversaciones,
+    activeConversacionId,
     inputValue,
     setInputValue,
     showWelcome,
+    isLoadingConversaciones,
+    isLoadingMensajes,
+    isSending,
+    persistError,
     nuevoChat,
-    enviarMensaje
+    abrirConversacion,
+    enviarMensaje,
   } = useChat({
     user,
+    accessToken,
     isAuthenticated,
     onRequireLogin: redirectToWmsLogin,
   });
@@ -111,9 +118,25 @@ export default function Home() {
         <button className="new-chat" onClick={nuevoChat}>+ Nuevo Chat</button>
 
         <div className="section-title">Conversaciones</div>
+        {persistError && (
+          <div className="history-empty history-empty--error">{persistError}</div>
+        )}
         <div className="history">
-          {history.map((item, index) => (
-            <div key={index} className="history-item">{item}</div>
+          {isLoadingConversaciones && conversaciones.length === 0 && (
+            <div className="history-empty">Cargando conversaciones…</div>
+          )}
+          {!isLoadingConversaciones && conversaciones.length === 0 && (
+            <div className="history-empty">Aún no hay conversaciones.</div>
+          )}
+          {conversaciones.map((conversacion) => (
+            <button
+              key={conversacion.idConversacion}
+              type="button"
+              className={`history-item${activeConversacionId === conversacion.idConversacion ? ' active' : ''}`}
+              onClick={() => abrirConversacion(conversacion.idConversacion)}
+            >
+              {conversacion.titulo || 'Nueva conversación'}
+            </button>
           ))}
         </div>
 
@@ -207,6 +230,9 @@ export default function Home() {
 
         {!showWelcome && (
           <div className="chat">
+            {isLoadingMensajes && messages.length === 0 && (
+              <div className="chat-status">Cargando mensajes…</div>
+            )}
             {messages.map((msg, index) => (
               <div
                 key={index}
@@ -238,7 +264,9 @@ export default function Home() {
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
             />
-            <button onClick={enviarMensaje}>Enviar</button>
+            <button onClick={enviarMensaje} disabled={isSending}>
+              {isSending ? 'Enviando…' : 'Enviar'}
+            </button>
           </div>
         </footer>
       </main>
