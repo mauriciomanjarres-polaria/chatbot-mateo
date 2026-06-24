@@ -34,53 +34,17 @@ export function useAuth() {
     setUser(null);
   }, []);
 
-  const logout = useCallback(async (tokenOverride) => {
-    const token = tokenOverride ?? accessToken ?? getStoredSession()?.accessToken;
-
-    if (token) {
-      try {
-        await authApi.logout(token);
-      } catch {
-        // La sesión local se limpia aunque falle el servidor.
-      }
-    }
-
-    clearSession();
-
-    if (!isDirectLoginEnabled()) {
-      redirectToWmsLogin();
-    }
-  }, [accessToken, clearSession]);
-
   useEffect(() => {
     let cancelled = false;
 
-    async function hydrate() {
+    function hydrate() {
       captureSessionFromLocation();
       const stored = getStoredSession();
       if (cancelled) return;
 
-      if (stored?.accessToken) {
+      if (stored) {
         applySession(stored);
-
-        try {
-          const me = await authApi.fetchMe(stored.accessToken);
-          if (cancelled) return;
-
-          if (!me.ok || !me.user?.idUsuario) {
-            await logout(stored.accessToken);
-            if (!cancelled) setIsReady(true);
-            return;
-          }
-
-          if (me.user) {
-            applySession({ ...stored, user: me.user });
-          }
-        } catch {
-          // Mantener sesión local si el servidor no responde.
-        }
-
-        if (!cancelled) setIsReady(true);
+        setIsReady(true);
         return;
       }
 
@@ -122,7 +86,7 @@ export function useAuth() {
       window.removeEventListener('storage', syncSession);
       window.removeEventListener('focus', syncSession);
     };
-  }, [applySession, clearSession, logout]);
+  }, [applySession, clearSession]);
 
   const leaveForWms = useCallback(async () => {
     const token = accessToken ?? getStoredSession()?.accessToken;
@@ -162,6 +126,21 @@ export function useAuth() {
       };
     }
   }, [accessToken]);
+
+  const logout = async () => {
+    if (user || accessToken) {
+      try {
+        await authApi.logout(accessToken);
+      } catch {
+        // La sesión local se limpia aunque falle el servidor.
+      }
+    }
+    clearSession();
+
+    if (!isDirectLoginEnabled()) {
+      redirectToWmsLogin();
+    }
+  };
 
   return {
     user,

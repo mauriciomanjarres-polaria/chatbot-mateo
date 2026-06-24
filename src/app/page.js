@@ -41,7 +41,6 @@ export default function Home() {
     accessToken,
     isAuthenticated,
     onRequireLogin: redirectToWmsLogin,
-    onInvalidSession: logout,
   });
 
   useEffect(() => {

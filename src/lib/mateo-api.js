@@ -1,5 +1,3 @@
-import { AuthSessionError } from './auth-errors';
-
 function authHeaders(accessToken) {
   return {
     'Content-Type': 'application/json',
@@ -10,9 +8,6 @@ function authHeaders(accessToken) {
 async function parseResponse(response) {
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    if (response.status === 401) {
-      throw new AuthSessionError(data.error || 'Sesión inválida.');
-    }
     throw new Error(data.error || 'Error al comunicarse con el servidor.');
   }
   return data;
