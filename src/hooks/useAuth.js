@@ -127,7 +127,7 @@ export function useAuth() {
     }
   }, [accessToken]);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     if (user || accessToken) {
       try {
         await authApi.logout(accessToken);
@@ -140,7 +140,7 @@ export function useAuth() {
     if (!isDirectLoginEnabled()) {
       redirectToWmsLogin();
     }
-  };
+  }, [user, accessToken, clearSession]);
 
   return {
     user,

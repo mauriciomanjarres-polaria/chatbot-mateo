@@ -5,10 +5,17 @@ function authHeaders(accessToken) {
   };
 }
 
+function createApiError(data, status) {
+  const error = new Error(data.error || 'Error al comunicarse con el servidor.');
+  error.status = status;
+  error.isSessionInvalid = status === 401;
+  return error;
+}
+
 async function parseResponse(response) {
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(data.error || 'Error al comunicarse con el servidor.');
+    throw createApiError(data, response.status);
   }
   return data;
 }

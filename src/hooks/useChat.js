@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import * as mateoApi from '../lib/mateo-api';
 
 const WEBHOOK_URL = 'https://polariatech.app.n8n.cloud/webhook/chat';
@@ -45,7 +45,20 @@ async function persistAssistantMessage({
   await refreshConversaciones();
 }
 
-export function useChat({ user, accessToken, isAuthenticated, onRequireLogin } = {}) {
+function handleSessionInvalid(error, onSessionInvalid) {
+  if (!error?.isSessionInvalid) return false;
+
+  onSessionInvalid?.();
+  return true;
+}
+
+export function useChat({
+  user,
+  accessToken,
+  isAuthenticated,
+  onRequireLogin,
+  onSessionInvalid,
+} = {}) {
   const [messages, setMessages] = useState([]);
   const [conversaciones, setConversaciones] = useState([]);
   const [activeConversacionId, setActiveConversacionId] = useState(null);
@@ -57,6 +70,11 @@ export function useChat({ user, accessToken, isAuthenticated, onRequireLogin } =
   const [persistError, setPersistError] = useState(null);
 
   const canPersist = Boolean(accessToken);
+  const onSessionInvalidRef = useRef(onSessionInvalid);
+
+  useEffect(() => {
+    onSessionInvalidRef.current = onSessionInvalid;
+  }, [onSessionInvalid]);
 
   const refreshConversaciones = useCallback(async () => {
     if (!canPersist) return;
@@ -67,6 +85,7 @@ export function useChat({ user, accessToken, isAuthenticated, onRequireLogin } =
       setConversaciones(sortConversaciones(items));
       setPersistError(null);
     } catch (error) {
+      if (handleSessionInvalid(error, () => onSessionInvalidRef.current?.())) return;
       setPersistError(error.message || 'No se pudo cargar el historial.');
     } finally {
       setIsLoadingConversaciones(false);
@@ -115,6 +134,7 @@ export function useChat({ user, accessToken, isAuthenticated, onRequireLogin } =
         setMessages(mensajes);
         setPersistError(null);
       } catch (error) {
+        if (handleSessionInvalid(error, () => onSessionInvalidRef.current?.())) return;
         setPersistError(error.message || 'No se pudo cargar la conversación.');
         setMessages([
           {
@@ -157,6 +177,7 @@ export function useChat({ user, accessToken, isAuthenticated, onRequireLogin } =
       });
       setPersistError(null);
     } catch (error) {
+      if (handleSessionInvalid(error, () => onSessionInvalidRef.current?.())) return;
       setPersistError(error.message || 'No se pudo guardar el mensaje en Supabase.');
     }
 
@@ -195,6 +216,7 @@ export function useChat({ user, accessToken, isAuthenticated, onRequireLogin } =
           refreshConversaciones,
         });
       } catch (error) {
+        if (handleSessionInvalid(error, () => onSessionInvalidRef.current?.())) return;
         setPersistError(error.message || 'No se pudo guardar la respuesta en Supabase.');
       }
     } catch {
