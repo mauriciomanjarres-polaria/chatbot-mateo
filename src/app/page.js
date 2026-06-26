@@ -12,10 +12,10 @@ import FormattedMessage from '../components/FormattedMessage';
 
 import {
   FaPenSquare,
-  FaCog,
-  FaUsers,
-  FaLink,
+  FaWarehouse,
+  FaBrain,
   FaChartBar,
+  FaChartLine,
   FaPaperclip,
   FaMicrophone,
   FaPaperPlane,
@@ -92,11 +92,27 @@ export default function Home() {
     ? (user.email?.split('@')[1] || user.codigoEmpresa || 'polaria.tech')
     : '';
 
-  const QUICK_ACTIONS = [
-    { icon: FaCog, label: 'Crear una nueva configuración' },
-    { icon: FaUsers, label: 'Asignar usuarios a un grupo' },
-    { icon: FaLink, label: 'Revisar integraciones activas' },
-    { icon: FaChartBar, label: 'Generar reporte de actividad' },
+  const WELCOME_CARDS = [
+    {
+      icon: FaWarehouse,
+      title: 'Consulta Instantánea de Inventarios',
+      description: 'Información precisa y actualizada para decisiones rápidas.',
+    },
+    {
+      icon: FaBrain,
+      title: 'Conocimiento y Gestión del Negocio',
+      description: 'Insights diarios para una administración con visión de futuro.',
+    },
+    {
+      icon: FaChartBar,
+      title: 'Disponibilidad Total de Informes',
+      description: 'Acceso inmediato a informes detallados y listos para la toma de decisiones.',
+    },
+    {
+      icon: FaChartLine,
+      title: 'Seguimiento de Utilidades en Tiempo Real',
+      description: 'Visualiza márgenes, costos y rentabilidad con datos consolidados al instante.',
+    },
   ];
 
   if (!isReady) {
@@ -227,11 +243,18 @@ export default function Home() {
               <p className="welcome-hero__subtitle">¿En qué puedo ayudarte hoy?</p>
             </div>
 
+            <p className="welcome-description">
+              Soy Mateo. Una IA estratégica para el control inteligente de tus ventas, compras y utilidades.
+            </p>
+
             <div className="action-grid">
-              {QUICK_ACTIONS.map(({ icon: Icon, label }) => (
-                <div key={label} className="action-btn">
-                  <Icon size={18} className="action-btn__icon" />
-                  <span>{label}</span>
+              {WELCOME_CARDS.map(({ icon: Icon, title, description }) => (
+                <div key={title} className="action-btn">
+                  <Icon size={20} className="action-btn__icon" />
+                  <div className="action-btn__content">
+                    <h3>{title}</h3>
+                    <p>{description}</p>
+                  </div>
                 </div>
               ))}
             </div>
