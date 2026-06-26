@@ -123,6 +123,12 @@ body {
 .new-chat {
   width: 100%;
   margin-bottom: 4px;
+  color: var(--w);
+}
+
+.new-chat svg {
+  color: var(--teal);
+  flex-shrink: 0;
 }
 
 .polaria-icon {
