@@ -6,21 +6,35 @@ const TITLE_HINT_RE = /reporte|resumen|maestro|informe|dashboard/i;
 const CURRENCY_RE = /(\$[\d,]+(?:\.\d{2})?)(\s*(?:MXN|USD|EUR))?/gi;
 const BOLD_SPLIT_RE = /(\*\*.+?\*\*)/g;
 const URL_RE = /(https?:\/\/[^\s<>"']+)/gi;
+const MD_LINK_RE = /\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)/gi;
 const URL_TRAILING_PUNCT_RE = /[.,;:!?)\]}>]+$/;
 
 function stripStrayBoldMarkers(text) {
   return text.replace(/\*\*/g, '');
 }
 
-function linkifyUrls(text, keyPrefix = '') {
-  if (!text) return text;
+function reportLink(url, label, key) {
+  return (
+    <a
+      key={key}
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="message-report-link"
+    >
+      {label}
+    </a>
+  );
+}
 
-  const cleaned = stripStrayBoldMarkers(text);
+function linkifyBareUrls(text, keyPrefix = '', keyStart = 0) {
+  if (!text) return { parts: [], nextKey: keyStart };
+
   const parts = [];
   let lastIndex = 0;
-  let key = 0;
+  let key = keyStart;
 
-  for (const match of cleaned.matchAll(URL_RE)) {
+  for (const match of text.matchAll(URL_RE)) {
     let url = match[0];
     const start = match.index ?? 0;
     let trailing = '';
@@ -34,23 +48,10 @@ function linkifyUrls(text, keyPrefix = '') {
     if (!url) continue;
 
     if (start > lastIndex) {
-      let before = cleaned.slice(lastIndex, start);
-      // Space before opening parenthesis: "texto(url" → "texto (url"
-      before = before.replace(/(\S)\($/u, '$1 (');
-      parts.push(before);
+      parts.push(text.slice(lastIndex, start));
     }
 
-    parts.push(
-      <a
-        key={`${keyPrefix}u${key++}`}
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="message-report-link"
-      >
-        Reporte
-      </a>
-    );
+    parts.push(reportLink(url, 'Ver Reporte', `${keyPrefix}u${key++}`));
 
     if (trailing) {
       parts.push(trailing);
@@ -59,10 +60,55 @@ function linkifyUrls(text, keyPrefix = '') {
     lastIndex = start + match[0].length;
   }
 
-  if (parts.length === 0) return cleaned;
+  if (parts.length === 0) {
+    return { parts: [text], nextKey: key };
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return { parts, nextKey: key };
+}
+
+function linkifyUrls(text, keyPrefix = '') {
+  if (!text) return text;
+
+  const cleaned = stripStrayBoldMarkers(text);
+  const parts = [];
+  let lastIndex = 0;
+  let key = 0;
+
+  for (const match of cleaned.matchAll(MD_LINK_RE)) {
+    const [full, label, url] = match;
+    const start = match.index ?? 0;
+
+    if (start > lastIndex) {
+      const before = linkifyBareUrls(
+        cleaned.slice(lastIndex, start),
+        keyPrefix,
+        key
+      );
+      parts.push(...before.parts);
+      key = before.nextKey;
+    }
+
+    parts.push(
+      reportLink(url, 'Ver Reporte', `${keyPrefix}m${key++}`)
+    );
+    lastIndex = start + full.length;
+  }
+
+  if (lastIndex === 0) {
+    const bare = linkifyBareUrls(cleaned, keyPrefix, key);
+    return bare.parts.length === 1 && typeof bare.parts[0] === 'string'
+      ? bare.parts[0]
+      : bare.parts;
+  }
 
   if (lastIndex < cleaned.length) {
-    parts.push(cleaned.slice(lastIndex));
+    const after = linkifyBareUrls(cleaned.slice(lastIndex), keyPrefix, key);
+    parts.push(...after.parts);
   }
 
   return parts;
