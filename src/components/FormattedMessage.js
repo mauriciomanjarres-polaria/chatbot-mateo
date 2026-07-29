@@ -93,9 +93,8 @@ function linkifyUrls(text, keyPrefix = '') {
       key = before.nextKey;
     }
 
-    parts.push(
-      reportLink(url, 'Ver Reporte', `${keyPrefix}m${key++}`)
-    );
+    const linkLabel = (label || '').trim() || 'Ver enlace';
+    parts.push(reportLink(url, linkLabel, `${keyPrefix}m${key++}`));
     lastIndex = start + full.length;
   }
 
