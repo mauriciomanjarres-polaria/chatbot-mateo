@@ -28,6 +28,7 @@ export default function Home() {
   const [isMobile, setIsMobile] = useState(false);
   const [showLogoutForm, setShowLogoutForm] = useState(false);
   const chatEndRef = useRef(null);
+  const inputRef = useRef(null);
 
   const { user, accessToken, isAuthenticated, isReady, logout, applySession } = useAuth();
   const allowDirectLogin = isDirectLoginEnabled();
@@ -44,6 +45,7 @@ export default function Home() {
     isSending,
     persistError,
     nuevoChat,
+    mostrarInicio,
     abrirConversacion,
     enviarMensaje,
   } = useChat({
@@ -86,6 +88,13 @@ export default function Home() {
     if (e.key === 'Enter') {
       enviarMensaje();
     }
+  };
+
+  const handleNuevoChat = () => {
+    nuevoChat();
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+    });
   };
 
   const displayName = isAuthenticated ? (user.nombre || user.username || 'Usuario') : 'Usuario';
@@ -158,11 +167,18 @@ export default function Home() {
           >
             <HiBars3 size={18} />
           </button>
-          <PolariaIcon size={40} className="brand-icon" />
-          <span className="brand-name">Polaria Mateo</span>
+          <button
+            className="brand-home"
+            type="button"
+            onClick={mostrarInicio}
+            aria-label="Ir al inicio"
+          >
+            <PolariaIcon size={40} className="brand-icon" />
+            <span className="brand-name">Polaria Mateo</span>
+          </button>
         </div>
 
-        <button className="new-chat outline-btn" onClick={nuevoChat} type="button">
+        <button className="new-chat outline-btn" onClick={handleNuevoChat} type="button">
           <FaPenSquare size={16} />
           Nuevo chat
         </button>
@@ -219,10 +235,15 @@ export default function Home() {
                 <HiBars3 size={18} />
               </button>
             )}
-            <h2 className="topbar-title">
+            <button
+              className="topbar-title"
+              type="button"
+              onClick={mostrarInicio}
+              aria-label="Ir al inicio"
+            >
               <PolariaIcon size={40} />
               Mateo IA
-            </h2>
+            </button>
           </div>
           <div className="topbar-actions">
             <WmsLinkButton compact={isMobile} />
@@ -297,6 +318,7 @@ export default function Home() {
               <FaPaperclip size={18} />
             </button>
             <input
+              ref={inputRef}
               type="text"
               placeholder="Escribe un mensaje a Mateo IA..."
               value={inputValue}

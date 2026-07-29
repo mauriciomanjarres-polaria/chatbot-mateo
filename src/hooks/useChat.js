@@ -117,6 +117,14 @@ export function useChat({
     setMessages([]);
     setActiveConversacionId(null);
     setInputValue('');
+    setShowWelcome(false);
+    setPersistError(null);
+  };
+
+  const mostrarInicio = () => {
+    setMessages([]);
+    setActiveConversacionId(null);
+    setInputValue('');
     setShowWelcome(true);
     setPersistError(null);
   };
@@ -258,6 +266,7 @@ export function useChat({
     isSending,
     persistError,
     nuevoChat,
+    mostrarInicio,
     abrirConversacion,
     enviarMensaje,
   };

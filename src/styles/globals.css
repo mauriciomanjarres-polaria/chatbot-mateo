@@ -72,6 +72,19 @@ body {
   flex-shrink: 0;
 }
 
+.brand-home {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
 .brand-name {
   white-space: nowrap;
   overflow: hidden;
@@ -382,9 +395,15 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
   font-size: clamp(16px, 2.5vw, 20px);
   font-weight: 600;
   white-space: nowrap;
+  cursor: pointer;
 }
 
 /* Welcome Screen */
