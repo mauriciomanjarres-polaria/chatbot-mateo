@@ -13,7 +13,26 @@ function stripStrayBoldMarkers(text) {
   return text.replace(/\*\*/g, '');
 }
 
-function reportLink(url, label, key) {
+function isUrlLikeLabel(label) {
+  return /^https?:\/\//i.test((label || '').trim());
+}
+
+function reportLink(url, label, key, onOpenEmbed) {
+  const safeLabel = isUrlLikeLabel(label) ? 'Ver Reporte' : label;
+
+  if (typeof onOpenEmbed === 'function') {
+    return (
+      <button
+        key={key}
+        type="button"
+        className="message-report-link message-report-link--embed"
+        onClick={() => onOpenEmbed({ url, label: safeLabel })}
+      >
+        {safeLabel}
+      </button>
+    );
+  }
+
   return (
     <a
       key={key}
@@ -22,12 +41,12 @@ function reportLink(url, label, key) {
       rel="noopener noreferrer"
       className="message-report-link"
     >
-      {label}
+      {safeLabel}
     </a>
   );
 }
 
-function linkifyBareUrls(text, keyPrefix = '', keyStart = 0) {
+function linkifyBareUrls(text, keyPrefix = '', keyStart = 0, onOpenEmbed) {
   if (!text) return { parts: [], nextKey: keyStart };
 
   const parts = [];
@@ -51,7 +70,7 @@ function linkifyBareUrls(text, keyPrefix = '', keyStart = 0) {
       parts.push(text.slice(lastIndex, start));
     }
 
-    parts.push(reportLink(url, 'Ver Reporte', `${keyPrefix}u${key++}`));
+    parts.push(reportLink(url, 'Ver Reporte', `${keyPrefix}u${key++}`, onOpenEmbed));
 
     if (trailing) {
       parts.push(trailing);
@@ -71,7 +90,7 @@ function linkifyBareUrls(text, keyPrefix = '', keyStart = 0) {
   return { parts, nextKey: key };
 }
 
-function linkifyUrls(text, keyPrefix = '') {
+function linkifyUrls(text, keyPrefix = '', onOpenEmbed) {
   if (!text) return text;
 
   const cleaned = stripStrayBoldMarkers(text);
@@ -87,33 +106,34 @@ function linkifyUrls(text, keyPrefix = '') {
       const before = linkifyBareUrls(
         cleaned.slice(lastIndex, start),
         keyPrefix,
-        key
+        key,
+        onOpenEmbed
       );
       parts.push(...before.parts);
       key = before.nextKey;
     }
 
     const linkLabel = (label || '').trim() || 'Ver enlace';
-    parts.push(reportLink(url, linkLabel, `${keyPrefix}m${key++}`));
+    parts.push(reportLink(url, linkLabel, `${keyPrefix}m${key++}`, onOpenEmbed));
     lastIndex = start + full.length;
   }
 
   if (lastIndex === 0) {
-    const bare = linkifyBareUrls(cleaned, keyPrefix, key);
+    const bare = linkifyBareUrls(cleaned, keyPrefix, key, onOpenEmbed);
     return bare.parts.length === 1 && typeof bare.parts[0] === 'string'
       ? bare.parts[0]
       : bare.parts;
   }
 
   if (lastIndex < cleaned.length) {
-    const after = linkifyBareUrls(cleaned.slice(lastIndex), keyPrefix, key);
+    const after = linkifyBareUrls(cleaned.slice(lastIndex), keyPrefix, key, onOpenEmbed);
     parts.push(...after.parts);
   }
 
   return parts;
 }
 
-function renderCurrencySpans(text, keyPrefix = '') {
+function renderCurrencySpans(text, keyPrefix = '', onOpenEmbed) {
   const parts = [];
   let lastIndex = 0;
   let key = 0;
@@ -123,7 +143,7 @@ function renderCurrencySpans(text, keyPrefix = '') {
     const start = match.index ?? 0;
 
     if (start > lastIndex) {
-      parts.push(linkifyUrls(text.slice(lastIndex, start), `${keyPrefix}t${key}-`));
+      parts.push(linkifyUrls(text.slice(lastIndex, start), `${keyPrefix}t${key}-`, onOpenEmbed));
     }
 
     parts.push(
@@ -137,28 +157,32 @@ function renderCurrencySpans(text, keyPrefix = '') {
   }
 
   if (parts.length === 0) {
-    return <span className="report-metric__amount">{linkifyUrls(text, keyPrefix)}</span>;
+    return (
+      <span className="report-metric__amount">
+        {linkifyUrls(text, keyPrefix, onOpenEmbed)}
+      </span>
+    );
   }
 
   if (lastIndex < text.length) {
-    parts.push(linkifyUrls(text.slice(lastIndex), `${keyPrefix}t${key}-`));
+    parts.push(linkifyUrls(text.slice(lastIndex), `${keyPrefix}t${key}-`, onOpenEmbed));
   }
 
   return parts;
 }
 
-function renderFormattedText(text, { highlightCurrency = false } = {}) {
+function renderFormattedText(text, { highlightCurrency = false, onOpenEmbed } = {}) {
   if (!text) return null;
 
   const pieces = text.split(BOLD_SPLIT_RE).filter((piece) => piece.length > 0);
-  if (pieces.length === 0) return linkifyUrls(text);
+  if (pieces.length === 0) return linkifyUrls(text, '', onOpenEmbed);
 
   return pieces.map((piece, index) => {
     const boldMatch = piece.match(/^\*\*(.+)\*\*$/s);
     const content = boldMatch ? boldMatch[1] : piece;
     const rendered = highlightCurrency
-      ? renderCurrencySpans(content, `${index}-`)
-      : linkifyUrls(content, `${index}-`);
+      ? renderCurrencySpans(content, `${index}-`, onOpenEmbed)
+      : linkifyUrls(content, `${index}-`, onOpenEmbed);
 
     if (boldMatch) {
       return <strong key={index}>{rendered}</strong>;
@@ -229,8 +253,9 @@ function parseReport(text) {
   return { type: 'report', title, sections };
 }
 
-export default function FormattedMessage({ text }) {
+export default function FormattedMessage({ text, onOpenEmbed }) {
   const parsed = parseReport(text);
+  const formatOpts = { onOpenEmbed };
 
   if (parsed.type === 'plain') {
     return (
@@ -238,7 +263,7 @@ export default function FormattedMessage({ text }) {
         {text.split('\n').map((line, index) => (
           <React.Fragment key={index}>
             {index > 0 && <br />}
-            {renderFormattedText(line)}
+            {renderFormattedText(line, formatOpts)}
           </React.Fragment>
         ))}
       </div>
@@ -253,7 +278,7 @@ export default function FormattedMessage({ text }) {
             {parsed.title.emoji}
           </span>
           <span className="report-title__text">
-            {renderFormattedText(parsed.title.text)}
+            {renderFormattedText(parsed.title.text, formatOpts)}
           </span>
         </header>
       )}
@@ -266,7 +291,7 @@ export default function FormattedMessage({ text }) {
                 <span className="report-section__emoji" aria-hidden="true">
                   {section.title.emoji}
                 </span>
-                <span>{renderFormattedText(section.title.text)}</span>
+                <span>{renderFormattedText(section.title.text, formatOpts)}</span>
               </h3>
             )}
 
@@ -275,11 +300,14 @@ export default function FormattedMessage({ text }) {
                 {section.items.map((item, itemIndex) => (
                   <li key={itemIndex} className="report-metric">
                     <span className="report-metric__label">
-                      {renderFormattedText(item.label)}
+                      {renderFormattedText(item.label, formatOpts)}
                     </span>
                     {item.value && (
                       <span className="report-metric__value">
-                        {renderFormattedText(item.value, { highlightCurrency: true })}
+                        {renderFormattedText(item.value, {
+                          highlightCurrency: true,
+                          onOpenEmbed,
+                        })}
                       </span>
                     )}
                   </li>

@@ -9,6 +9,8 @@ import { useAuth } from '../hooks/useAuth';
 import LoginForm from '../components/LoginForm';
 import { useChat } from '../hooks/useChat';
 import FormattedMessage from '../components/FormattedMessage';
+import EmbedPanel, { extractFirstUrl } from '../components/EmbedPanel';
+import { registerEmbedUrl, releaseEmbedUrl } from '../lib/embed-registry';
 
 import {
   FaPenSquare,
@@ -27,8 +29,10 @@ export default function Home() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showLogoutForm, setShowLogoutForm] = useState(false);
+  const [embed, setEmbed] = useState(null);
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
+  const lastAutoEmbedRef = useRef(null);
 
   const { user, accessToken, isAuthenticated, isReady, logout, applySession } = useAuth();
   const allowDirectLogin = isDirectLoginEnabled();
@@ -80,6 +84,44 @@ export default function Home() {
     return () => mq.removeEventListener('change', syncLayout);
   }, []);
 
+  // Auto-embeber la URL cuando Mateo responde con un enlace
+  useEffect(() => {
+    if (showWelcome || messages.length === 0 || isSending) return;
+
+    const lastIa = [...messages].reverse().find((m) => m.tipo === 'ia');
+    if (!lastIa?.texto) return;
+
+    const found = extractFirstUrl(lastIa.texto);
+    if (!found?.url) return;
+    if (lastAutoEmbedRef.current === found.url) return;
+
+    lastAutoEmbedRef.current = found.url;
+    setEmbed((prev) => {
+      if (prev?.token) releaseEmbedUrl(prev.token);
+      const token = registerEmbedUrl(found.url);
+      if (!token) return null;
+      return { token, title: found.label || 'Reporte' };
+    });
+  }, [messages, showWelcome, isSending]);
+
+  const openEmbed = ({ url, label }) => {
+    if (!url) return;
+    lastAutoEmbedRef.current = url;
+    setEmbed((prev) => {
+      if (prev?.token) releaseEmbedUrl(prev.token);
+      const token = registerEmbedUrl(url);
+      if (!token) return null;
+      return { token, title: label || 'Reporte' };
+    });
+  };
+
+  const closeEmbed = () => {
+    setEmbed((prev) => {
+      if (prev?.token) releaseEmbedUrl(prev.token);
+      return null;
+    });
+  };
+
   const toggleSidebar = () => {
     setIsSidebarCollapsed((collapsed) => !collapsed);
   };
@@ -92,9 +134,23 @@ export default function Home() {
 
   const handleNuevoChat = () => {
     nuevoChat();
+    closeEmbed();
+    lastAutoEmbedRef.current = null;
     requestAnimationFrame(() => {
       inputRef.current?.focus();
     });
+  };
+
+  const handleMostrarInicio = () => {
+    mostrarInicio();
+    closeEmbed();
+    lastAutoEmbedRef.current = null;
+  };
+
+  const handleAbrirConversacion = (id) => {
+    lastAutoEmbedRef.current = null;
+    closeEmbed();
+    abrirConversacion(id);
   };
 
   const displayName = isAuthenticated ? (user.nombre || user.username || 'Usuario') : 'Usuario';
@@ -152,8 +208,10 @@ export default function Home() {
     );
   }
 
+  const hasEmbed = Boolean(embed?.token);
+
   return (
-    <div className="layout">
+    <div className={`layout${hasEmbed ? ' layout--with-embed' : ''}`}>
       {isMobile && !isSidebarCollapsed && (
         <div className="sidebar-backdrop" onClick={toggleSidebar} aria-hidden="true" />
       )}
@@ -170,7 +228,7 @@ export default function Home() {
           <button
             className="brand-home"
             type="button"
-            onClick={mostrarInicio}
+            onClick={handleMostrarInicio}
             aria-label="Ir al inicio"
           >
             <PolariaIcon size={40} className="brand-icon" />
@@ -198,7 +256,7 @@ export default function Home() {
               key={conversacion.idConversacion}
               type="button"
               className={`history-item${activeConversacionId === conversacion.idConversacion ? ' active' : ''}`}
-              onClick={() => abrirConversacion(conversacion.idConversacion)}
+              onClick={() => handleAbrirConversacion(conversacion.idConversacion)}
             >
               {conversacion.titulo || 'Nueva conversación'}
             </button>
@@ -238,7 +296,7 @@ export default function Home() {
             <button
               className="topbar-title"
               type="button"
-              onClick={mostrarInicio}
+              onClick={handleMostrarInicio}
               aria-label="Ir al inicio"
             >
               <PolariaIcon size={40} />
@@ -301,7 +359,7 @@ export default function Home() {
                       <PolariaIcon size={34} />
                       Mateo
                     </div>
-                    <FormattedMessage text={msg.texto} />
+                    <FormattedMessage text={msg.texto} onOpenEmbed={openEmbed} />
                   </>
                 ) : (
                   msg.texto
@@ -340,6 +398,14 @@ export default function Home() {
           </div>
         </footer>
       </main>
+
+      {hasEmbed && (
+        <EmbedPanel
+          token={embed.token}
+          title={embed.title}
+          onClose={closeEmbed}
+        />
+      )}
 
       {showLogoutForm && (
         <LogoutForm
