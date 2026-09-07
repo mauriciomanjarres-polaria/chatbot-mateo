@@ -25,7 +25,18 @@ export function useAuth() {
 
     setStoredSession(session);
     setAccessToken(session.accessToken);
-    setUser(session.user ?? null);
+    setUser(
+      session.user
+        ? {
+            ...session.user,
+            codigoEmpresa:
+              session.user.codigoEmpresa ??
+              session.context?.codigoEmpresa ??
+              session.context?.codigo_empresa ??
+              null,
+          }
+        : null,
+    );
   }, []);
 
   const clearSession = useCallback(() => {

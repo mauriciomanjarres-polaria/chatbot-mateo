@@ -92,6 +92,19 @@ function decodeJwtPayload(token) {
   }
 }
 
+function resolveCodigoEmpresa(user, context) {
+  return user?.codigoEmpresa ?? context?.codigoEmpresa ?? context?.codigo_empresa ?? null;
+}
+
+function withCodigoEmpresa(user, context) {
+  if (!user) return null;
+
+  return {
+    ...user,
+    codigoEmpresa: resolveCodigoEmpresa(user, context),
+  };
+}
+
 function normalizeUser(rawUser = {}) {
   const user = rawUser ?? {};
 
@@ -126,12 +139,16 @@ function normalizeStoredSession(rawSession) {
 
   const user = rawUser && typeof rawUser === 'object' ? normalizeUser(rawUser) : null;
   const context = rawContext && typeof rawContext === 'object' ? rawContext : null;
+  const mergedUser = withCodigoEmpresa(user, context);
 
   return {
     accessToken,
     refreshToken: refreshToken ?? null,
     context,
-    user: user && (user.idUsuario || user.username || user.nombre || user.email) ? user : null,
+    user:
+      mergedUser && (mergedUser.idUsuario || mergedUser.username || mergedUser.nombre || mergedUser.email)
+        ? mergedUser
+        : null,
   };
 }
 

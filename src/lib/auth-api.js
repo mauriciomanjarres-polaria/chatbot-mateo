@@ -34,6 +34,19 @@ function extractErrorMessage(data, fallback) {
   return fallback;
 }
 
+function resolveCodigoEmpresa(user, context) {
+  return user?.codigoEmpresa ?? context?.codigoEmpresa ?? context?.codigo_empresa ?? null;
+}
+
+function withCodigoEmpresa(user, context) {
+  if (!user) return null;
+
+  return {
+    ...user,
+    codigoEmpresa: resolveCodigoEmpresa(user, context),
+  };
+}
+
 function normalizeUser(rawUser = {}) {
   return {
     idUsuario: rawUser.idUsuario ?? rawUser.id ?? rawUser.userId ?? null,
@@ -50,7 +63,7 @@ function normalizeSession(data) {
   const refreshToken = data.refreshToken ?? data.refresh_token ?? null;
   const context = data.context ?? null;
   const rawUser = data.user ?? data.usuario ?? data.context ?? data;
-  const user = normalizeUser(rawUser);
+  const user = withCodigoEmpresa(normalizeUser(rawUser), context);
 
   if (!accessToken) {
     throw new Error('La API no devolvió un token de acceso.');
@@ -113,7 +126,10 @@ export async function login({ username, password, codigoEmpresa }) {
     let session = normalizeSession(result.data);
     const meResult = await fetchMe(session.accessToken);
     if (meResult.ok && meResult.user) {
-      session = { ...session, user: meResult.user };
+      session = {
+        ...session,
+        user: withCodigoEmpresa(meResult.user, session.context),
+      };
     }
     return { ...result, session };
   } catch (error) {
@@ -167,7 +183,10 @@ export async function fetchMe(token) {
 
   return {
     ...result,
-    user: normalizeUser(result.data?.user ?? result.data),
+    user: withCodigoEmpresa(
+      session?.user ?? normalizeUser(result.data?.user ?? result.data),
+      result.data?.context,
+    ),
     session,
   };
 }
