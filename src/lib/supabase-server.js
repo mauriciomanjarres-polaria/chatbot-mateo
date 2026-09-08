@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 
 let adminClient = null;
 
-function normalizeSupabaseUrl(rawUrl) {
+export function normalizeSupabaseUrl(rawUrl) {
   const trimmed = rawUrl?.trim();
   if (!trimmed) return '';
 
