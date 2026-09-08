@@ -2,6 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import * as mateoApi from '../lib/mateo-api';
 
 const WEBHOOK_URL = 'https://polariatech.app.n8n.cloud/webhook/chat';
+const WEBHOOK_URL_CHATPOLARIA = 'https://polariatech.app.n8n.cloud/webhook/polaria';
+
+function resolveWebhookUrl(codigoEmpresa) {
+  return String(codigoEmpresa || '').toUpperCase() === 'Y9IHZ' ? WEBHOOK_URL_CHATPOLARIA : WEBHOOK_URL;
+}
 
 function sortConversaciones(items) {
   return [...items].sort(
@@ -201,7 +206,7 @@ export function useChat({
         },
       };
 
-      const response = await fetch(WEBHOOK_URL, {
+      const response = await fetch(resolveWebhookUrl(user.codigoEmpresa), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
