@@ -68,13 +68,43 @@ export async function consultarTableroRpc({ schema, fechaInicio, fechaFin }) {
   return normalizarFilasRpc(await response.json());
 }
 
+function claveFila(row, uniqueKey) {
+  if (!uniqueKey) return null;
+  if (Array.isArray(uniqueKey)) {
+    const partes = uniqueKey.map((campo) => row?.[campo]);
+    if (partes.every((valor) => valor == null || valor === '')) return null;
+    return partes.join('\0');
+  }
+  return row?.[uniqueKey] ?? null;
+}
+
+function deduplicarFilas(rows, uniqueKey) {
+  if (!uniqueKey) return rows;
+  const seen = new Set();
+  return rows.filter((row) => {
+    const id = claveFila(row, uniqueKey);
+    if (id == null || id === '') return true;
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+}
+
 function siguienteDiaIso(fechaIso) {
   const d = new Date(`${fechaIso}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + 1);
   return d.toISOString().slice(0, 10);
 }
 
-async function consultarVista({ schema, vista, order, fechaColumna, fechaInicio, fechaFin }) {
+async function consultarVista({
+  schema,
+  vista,
+  order,
+  fechaColumna,
+  fechaInicio,
+  fechaFin,
+  uniqueKey,
+}) {
   const baseUrl = normalizeSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
 
@@ -84,16 +114,17 @@ async function consultarVista({ schema, vista, order, fechaColumna, fechaInicio,
 
   const all = [];
   const page = 1000;
-  const maxPaginas = 50;
+  const maxPaginas = 100;
   let from = 0;
   const queryParts = [];
   if (fechaColumna) {
     queryParts.push(`${fechaColumna}=gte.${fechaInicio}`);
     queryParts.push(`${fechaColumna}=lt.${siguienteDiaIso(fechaFin)}`);
-    queryParts.push(`order=${fechaColumna}.desc`);
-  } else if (order) {
-    queryParts.push(`order=${order}`);
   }
+  const orderExpr = fechaColumna
+    ? `${fechaColumna}.desc${order ? `,${order}` : ''}`
+    : order;
+  if (orderExpr) queryParts.push(`order=${orderExpr}`);
   const query = queryParts.join('&');
   const url = query ? `${baseUrl}/rest/v1/${vista}?${query}` : `${baseUrl}/rest/v1/${vista}`;
 
@@ -116,11 +147,16 @@ async function consultarVista({ schema, vista, order, fechaColumna, fechaInicio,
 
     const chunk = await response.json();
     all.push(...chunk);
-    if (chunk.length < page) return all;
+
+    const contentRange = response.headers.get('content-range') || '';
+    const totalMatch = contentRange.match(/\/(\d+|\*)$/);
+    const total = totalMatch && totalMatch[1] !== '*' ? Number(totalMatch[1]) : null;
+    const gotAll = total != null ? all.length >= total : chunk.length < page;
+    if (gotAll) return deduplicarFilas(all, uniqueKey);
     from += page;
   }
 
-  throw new Error('Hay demasiados registros. Reduce el rango o filtra la consulta.');
+  throw new Error('Hay demasiados registros. Reduce el rango o vuelve a consultar.');
 }
 
 export async function consultarVistaVentas({ schema, fechaInicio, fechaFin }) {
@@ -130,6 +166,8 @@ export async function consultarVistaVentas({ schema, fechaInicio, fechaFin }) {
     fechaColumna: 'fecha_venta',
     fechaInicio,
     fechaFin,
+    order: 'id_line_item.asc',
+    uniqueKey: 'id_line_item',
   });
 }
 
@@ -140,6 +178,8 @@ export async function consultarVistaCompras({ schema, fechaInicio, fechaFin }) {
     fechaColumna: 'fecha_compra',
     fechaInicio,
     fechaFin,
+    order: 'id_line_item.asc',
+    uniqueKey: 'id_line_item',
   });
 }
 
@@ -147,6 +187,7 @@ export async function consultarVistaInventario({ schema }) {
   return consultarVista({
     schema,
     vista: 'vista_inventario',
-    order: 'existencia_actual.desc',
+    order: 'existencia_actual.desc,id_producto.asc,id_bodega.asc',
+    uniqueKey: ['id_producto', 'id_bodega'],
   });
 }

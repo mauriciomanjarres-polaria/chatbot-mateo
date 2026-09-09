@@ -246,6 +246,7 @@ export default function ReporteInventarioTablero({ accessToken, onSessionInvalid
   const chartCantidadRef = useRef(null);
   const chartAlmacenRef = useRef(null);
   const graficosRef = useRef([]);
+  const cargaIdRef = useRef(0);
 
   const columnas = useMemo(() => {
     if (!rows?.length) return [];
@@ -379,6 +380,8 @@ export default function ReporteInventarioTablero({ accessToken, onSessionInvalid
   }, [tab, rows]);
 
   async function cargarTablero() {
+    const cargaId = cargaIdRef.current + 1;
+    cargaIdRef.current = cargaId;
     setErrorMessage('');
     setFiltros({});
     setOrden({ col: null, dir: 1 });
@@ -409,12 +412,14 @@ export default function ReporteInventarioTablero({ accessToken, onSessionInvalid
         throw new Error(data.error || 'Error ejecutando la consulta');
       }
 
+      if (cargaId !== cargaIdRef.current) return;
       setRows(data.rows || []);
     } catch (error) {
+      if (cargaId !== cargaIdRef.current) return;
       setRows(null);
       setErrorMessage(error.message || 'Error ejecutando la consulta');
     } finally {
-      setLoading(false);
+      if (cargaId === cargaIdRef.current) setLoading(false);
     }
   }
 
