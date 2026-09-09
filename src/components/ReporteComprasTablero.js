@@ -253,7 +253,7 @@ export default function ReporteComprasTablero({ accessToken, onSessionInvalid })
   const [fechaFin, setFechaFin] = useState(fechaAyerIso);
   const [fechaInicioTexto, setFechaInicioTexto] = useState(() => isoToDmy(fechaAyerIso()));
   const [fechaFinTexto, setFechaFinTexto] = useState(() => isoToDmy(fechaAyerIso()));
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
   const [rows, setRows] = useState(null);
   const [tab, setTab] = useState('tabla');
@@ -450,6 +450,10 @@ export default function ReporteComprasTablero({ accessToken, onSessionInvalid })
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    cargarTablero();
+  }, [accessToken]);
 
   function ordenarColumna(columna) {
     setOrden((prev) => (

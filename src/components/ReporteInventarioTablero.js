@@ -233,7 +233,7 @@ function agruparSuma(rows, etiquetaFn, valorKey) {
 }
 
 export default function ReporteInventarioTablero({ accessToken, onSessionInvalid }) {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
   const [rows, setRows] = useState(null);
   const [tab, setTab] = useState('tabla');
@@ -417,6 +417,10 @@ export default function ReporteInventarioTablero({ accessToken, onSessionInvalid
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    cargarTablero();
+  }, [accessToken]);
 
   function ordenarColumna(columna) {
     setOrden((prev) => (
