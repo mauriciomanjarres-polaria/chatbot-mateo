@@ -1,4 +1,4 @@
-import React from 'react';
+import { normalizeMessageLinks } from '../lib/message-links';
 
 const BULLET_RE = /^(\*(?!\*)|[\-•])\s*(.+)$/;
 const EMOJI_HEADER_RE = /^(\p{Extended_Pictographic})\s*(.+)$/u;
@@ -6,7 +6,7 @@ const TITLE_HINT_RE = /reporte|resumen|maestro|informe|dashboard/i;
 const CURRENCY_RE = /(\$[\d,]+(?:\.\d{2})?)(\s*(?:MXN|USD|EUR))?/gi;
 const BOLD_SPLIT_RE = /(\*\*.+?\*\*)/g;
 const URL_RE = /(https?:\/\/[^\s<>"']+)/gi;
-const MD_LINK_RE = /\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)/gi;
+const MD_LINK_RE = /\[([^\]]*)\]\(\s*(https?:\/\/[^)\s]+)\s*\)/gi;
 const URL_TRAILING_PUNCT_RE = /[.,;:!?)\]}>]+$/;
 
 function stripStrayBoldMarkers(text) {
@@ -18,7 +18,7 @@ function isUrlLikeLabel(label) {
 }
 
 function reportLink(url, label, key, onOpenEmbed) {
-  const safeLabel = isUrlLikeLabel(label) ? 'Ver Reporte' : label;
+  const safeLabel = isUrlLikeLabel(label) ? 'Ver Reporte' : stripStrayBoldMarkers(label).trim() || 'Ver reporte';
 
   if (typeof onOpenEmbed === 'function') {
     return (
@@ -254,13 +254,14 @@ function parseReport(text) {
 }
 
 export default function FormattedMessage({ text, onOpenEmbed }) {
-  const parsed = parseReport(text);
+  const normalized = normalizeMessageLinks(text);
+  const parsed = parseReport(normalized);
   const formatOpts = { onOpenEmbed };
 
   if (parsed.type === 'plain') {
     return (
       <div className="message-content message-content--plain">
-        {text.split('\n').map((line, index) => (
+        {normalized.split('\n').map((line, index) => (
           <React.Fragment key={index}>
             {index > 0 && <br />}
             {renderFormattedText(line, formatOpts)}

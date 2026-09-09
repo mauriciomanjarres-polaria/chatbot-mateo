@@ -8,6 +8,7 @@ import {
   EMBED_MSG_READY,
   peekEmbedUrl,
 } from '../lib/embed-registry';
+import { extractFirstUrl as extractFirstUrlFromText } from '../lib/message-links';
 
 export default function EmbedPanel({ token, title, onClose }) {
   const [loadError, setLoadError] = useState(false);
@@ -143,14 +144,5 @@ export default function EmbedPanel({ token, title, onClose }) {
  * Extrae la primera URL http(s) de un texto (markdown o bare).
  */
 export function extractFirstUrl(text) {
-  if (!text) return null;
-
-  const md = text.match(/\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)/i);
-  if (md?.[2]) return { url: md[2], label: (md[1] || '').trim() || null };
-
-  const bare = text.match(/https?:\/\/[^\s<>"']+/i);
-  if (!bare) return null;
-
-  let url = bare[0].replace(/[.,;:!?)\]}>]+$/, '');
-  return url ? { url, label: null } : null;
+  return extractFirstUrlFromText(text);
 }
