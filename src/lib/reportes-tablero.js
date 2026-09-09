@@ -67,3 +67,86 @@ export async function consultarTableroRpc({ schema, fechaInicio, fechaFin }) {
 
   return normalizarFilasRpc(await response.json());
 }
+
+function siguienteDiaIso(fechaIso) {
+  const d = new Date(`${fechaIso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
+async function consultarVista({ schema, vista, order, fechaColumna, fechaInicio, fechaFin }) {
+  const baseUrl = normalizeSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+
+  if (!baseUrl || !key) {
+    throw new Error('Supabase no está configurado.');
+  }
+
+  const all = [];
+  const page = 1000;
+  const maxPaginas = 50;
+  let from = 0;
+  const queryParts = [];
+  if (fechaColumna) {
+    queryParts.push(`${fechaColumna}=gte.${fechaInicio}`);
+    queryParts.push(`${fechaColumna}=lt.${siguienteDiaIso(fechaFin)}`);
+    queryParts.push(`order=${fechaColumna}.desc`);
+  } else if (order) {
+    queryParts.push(`order=${order}`);
+  }
+  const query = queryParts.join('&');
+  const url = query ? `${baseUrl}/rest/v1/${vista}?${query}` : `${baseUrl}/rest/v1/${vista}`;
+
+  for (let pagina = 0; pagina < maxPaginas; pagina += 1) {
+    const response = await fetch(url, {
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+        Accept: 'application/json',
+        'Accept-Profile': schema,
+        Prefer: 'count=exact',
+        Range: `${from}-${from + page - 1}`,
+        'Range-Unit': 'items',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(await leerError(response));
+    }
+
+    const chunk = await response.json();
+    all.push(...chunk);
+    if (chunk.length < page) return all;
+    from += page;
+  }
+
+  throw new Error('Hay demasiados registros. Reduce el rango o filtra la consulta.');
+}
+
+export async function consultarVistaVentas({ schema, fechaInicio, fechaFin }) {
+  return consultarVista({
+    schema,
+    vista: 'vista_ventas',
+    fechaColumna: 'fecha_venta',
+    fechaInicio,
+    fechaFin,
+  });
+}
+
+export async function consultarVistaCompras({ schema, fechaInicio, fechaFin }) {
+  return consultarVista({
+    schema,
+    vista: 'vista_compras',
+    fechaColumna: 'fecha_compra',
+    fechaInicio,
+    fechaFin,
+  });
+}
+
+export async function consultarVistaInventario({ schema }) {
+  return consultarVista({
+    schema,
+    vista: 'vista_inventario',
+    order: 'existencia_actual.desc',
+  });
+}
