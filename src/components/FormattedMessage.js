@@ -253,9 +253,17 @@ function parseReport(text) {
   return { type: 'report', title, sections };
 }
 
+function looksLikeLinkList(text) {
+  if (/\[([^\]]+)\]\(\s*https?:\/\//i.test(text)) return true;
+  if (/^\s*\d+\.\s+/m.test(text)) return true;
+  return false;
+}
+
 export default function FormattedMessage({ text, onOpenEmbed }) {
   const normalized = normalizeMessageLinks(text);
-  const parsed = parseReport(normalized);
+  const parsed = looksLikeLinkList(normalized)
+    ? { type: 'plain', text: normalized }
+    : parseReport(normalized);
   const formatOpts = { onOpenEmbed };
 
   if (parsed.type === 'plain') {
