@@ -1,3 +1,4 @@
+import React from 'react';
 import { normalizeMessageLinks } from '../lib/message-links';
 
 const BULLET_RE = /^(\*(?!\*)|[\-•])\s*(.+)$/;
